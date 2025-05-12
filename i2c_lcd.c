@@ -1,6 +1,6 @@
 #include "i2c_lcd.h"
-#include "stm32f4xx_hal.h"
-#include "string.h"
+#include "stm32f4xx_hal_i2c.h"
+
 
 static I2C_HandleTypeDef *lcd_i2c;
 static uint8_t backlight = LCD_BACKLIGHT;
