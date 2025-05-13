@@ -18,8 +18,6 @@ static void simple_delay(volatile uint32_t count) {
     while(count--);
 }
 
-/* Exported functions --------------------------------------------------------*/
-
 /**
  * @brief Enables the clock for the selected ADC peripheral.
  */
