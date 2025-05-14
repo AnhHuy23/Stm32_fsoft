@@ -1,56 +1,103 @@
-#ifndef GPIO_H
-#define GPIO_H
+#ifndef GPIO_DRIVER_H_
+#define GPIO_DRIVER_H_
 
 #include "stm32f4xx.h"
 
-// GPIO configuration enums
+/**
+ * @brief GPIO pin mode options
+ */
 typedef enum {
-    DRIVER_GPIO_MODE_INPUT = 0x00,
-    DRIVER_GPIO_MODE_OUTPUT = 0x01,
-    DRIVER_GPIO_MODE_AF = 0x02,
-    DRIVER_GPIO_MODE_ANALOG = 0x03
-} GPIOMode;
+    GPIO_DRIVER_MODE_INPUT        = 0x00, /**< Input mode (floating) */
+    GPIO_DRIVER_MODE_OUTPUT       = 0x01, /**< Output mode */
+    GPIO_DRIVER_MODE_ALT_FUNCTION = 0x02, /**< Alternate function mode */
+    GPIO_DRIVER_MODE_ANALOG       = 0x03  /**< Analog mode */
+} gpio_driver_mode_t;
 
+/**
+ * @brief GPIO output type options
+ */
 typedef enum {
-    DRIVER_GPIO_OUTPUT_PP = 0x00,
-    DRIVER_GPIO_OUTPUT_OD = 0x01
-} GPIOOutputType;
+    GPIO_DRIVER_OUTPUT_PUSH_PULL  = 0x00, /**< Push-pull output */
+    GPIO_DRIVER_OUTPUT_OPEN_DRAIN = 0x01  /**< Open-drain output */
+} gpio_driver_output_type_t;
 
+/**
+ * @brief GPIO pull-up/pull-down configuration
+ */
 typedef enum {
-    DRIVER_GPIO_NO_PULL = 0x00,
-    DRIVER_GPIO_PULL_UP = 0x01,
-    DRIVER_GPIO_PULL_DOWN = 0x02
-} GPIOPull;
+    GPIO_DRIVER_NO_PULL   = 0x00, /**< No pull-up or pull-down */
+    GPIO_DRIVER_PULL_UP   = 0x01, /**< Pull-up configuration */
+    GPIO_DRIVER_PULL_DOWN = 0x02  /**< Pull-down configuration */
+} gpio_driver_pull_t;
 
+/**
+ * @brief GPIO speed configuration
+ */
 typedef enum {
-    DRIVER_GPIO_SPEED_LOW = 0x00,
-    DRIVER_GPIO_SPEED_MEDIUM = 0x01,
-    DRIVER_GPIO_SPEED_FAST = 0x02,
-    DRIVER_GPIO_SPEED_HIGH = 0x03
-} GPIOSpeed;
+    GPIO_DRIVER_SPEED_LOW    = 0x00, /**< Low speed (2 MHz) */
+    GPIO_DRIVER_SPEED_MEDIUM = 0x01, /**< Medium speed (25 MHz) */
+    GPIO_DRIVER_SPEED_FAST   = 0x02, /**< Fast speed (50 MHz) */
+    GPIO_DRIVER_SPEED_HIGH   = 0x03  /**< High speed (100 MHz) */
+} gpio_driver_speed_t;
 
+/**
+ * @brief GPIO alternate function configuration
+ */
 typedef enum {
-    DRIVER_GPIO_AF0 = 0x00,
-    DRIVER_GPIO_AF1, DRIVER_GPIO_AF2, DRIVER_GPIO_AF3,
-    DRIVER_GPIO_AF4, DRIVER_GPIO_AF5, DRIVER_GPIO_AF6, DRIVER_GPIO_AF7,
-    DRIVER_GPIO_AF8, DRIVER_GPIO_AF9, DRIVER_GPIO_AF10, DRIVER_GPIO_AF11,
-    DRIVER_GPIO_AF12, DRIVER_GPIO_AF13, DRIVER_GPIO_AF14, DRIVER_GPIO_AF15
-} GPIOAltFunction;
+    GPIO_DRIVER_AF0 = 0x00, GPIO_DRIVER_AF1,  GPIO_DRIVER_AF2,  GPIO_DRIVER_AF3,
+    GPIO_DRIVER_AF4,        GPIO_DRIVER_AF5,  GPIO_DRIVER_AF6,  GPIO_DRIVER_AF7,
+    GPIO_DRIVER_AF8,        GPIO_DRIVER_AF9,  GPIO_DRIVER_AF10, GPIO_DRIVER_AF11,
+    GPIO_DRIVER_AF12,       GPIO_DRIVER_AF13, GPIO_DRIVER_AF14, GPIO_DRIVER_AF15
+} gpio_driver_alt_function_t;
 
+/**
+ * @brief GPIO pin configuration structure
+ */
 typedef struct {
-    GPIO_TypeDef *port;
-    uint8_t pin;
-    GPIOMode mode;
-    GPIOOutputType otype;
-    GPIOSpeed speed;
-    GPIOPull pull;
-    GPIOAltFunction af;
-} GPIOConfig;
+    GPIO_TypeDef *port;               /**< GPIO port (GPIOA, GPIOB, etc.) */
+    uint8_t        pin;               /**< Pin number (0-15) */
+    gpio_driver_mode_t mode;          /**< Mode: input, output, AF, analog */
+    gpio_driver_output_type_t otype;  /**< Output type: push-pull or open-drain */
+    gpio_driver_speed_t speed;        /**< Output speed */
+    gpio_driver_pull_t pull;          /**< Pull-up/pull-down config */
+    gpio_driver_alt_function_t af;    /**< Alternate function if used */
+} gpio_driver_config_t;
 
-void gpio_init(GPIOConfig *cfg);
-void gpio_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value);
-uint8_t gpio_read(GPIO_TypeDef *port, uint8_t pin);
-void gpio_toggle(GPIO_TypeDef *port, uint8_t pin);
-void gpio_set_af(GPIO_TypeDef *port, uint8_t pin, GPIOAltFunction af);
+/**
+ * @brief Initialize a GPIO pin with the given configuration
+ * @param cfg Pointer to GPIO configuration struct
+ */
+void gpio_driver_init(const gpio_driver_config_t *cfg);
 
-#endif // GPIO_H
+/**
+ * @brief Write logic value to GPIO pin
+ * @param port GPIO port
+ * @param pin Pin number
+ * @param value 0 = Low, non-zero = High
+ */
+void gpio_driver_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value);
+
+/**
+ * @brief Read logic level of GPIO pin
+ * @param port GPIO port
+ * @param pin Pin number
+ * @return 0 = Low, 1 = High
+ */
+uint8_t gpio_driver_read(GPIO_TypeDef *port, uint8_t pin);
+
+/**
+ * @brief Toggle output level of GPIO pin
+ * @param port GPIO port
+ * @param pin Pin number
+ */
+void gpio_driver_toggle(GPIO_TypeDef *port, uint8_t pin);
+
+/**
+ * @brief Set alternate function for a GPIO pin
+ * @param port GPIO port
+ * @param pin Pin number
+ * @param af Alternate function selection
+ */
+void gpio_driver_set_af(GPIO_TypeDef *port, uint8_t pin, gpio_driver_alt_function_t af);
+
+#endif  // GPIO_DRIVER_H_
