@@ -5,8 +5,8 @@ static I2C_HandleTypeDef *lcd_i2c;         // Pointer to I2C handle
 static uint8_t backlight = LCD_BACKLIGHT;  // Backlight control flag
 
 void lcd_config(I2C_HandleTypeDef *hi2c) {
-    lcd_i2c = hi2c;   // Gán handle I2C toàn cục
-    lcd_init();       // Khởi tạo LCD
+    lcd_i2c = hi2c;   
+    lcd_init();       
 }
 
 // Send a byte (command or data) to the LCD via I2C
