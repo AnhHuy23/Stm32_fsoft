@@ -1,58 +1,68 @@
-/**
- * @file main.c
- * @brief Simple GPIO example for STM32F401CCU6 using the provided GPIO driver.
- * This example toggles an LED based on the state of a button.
- */
-
 #include "stm32f4xx.h"
-#include "GPIO_Driver.h"
+#include "gpio.h"
+#include "relay_driver.h"
+#include "button_driver.h"
 
-/* Define the LED pin and port */
-#define LED_PIN   5  /* Typically PA5 on many STM32 boards */
-#define LED_PORT  GPIOA
+/* Private constants ---------------------------------------------------------*/
+#define BUTTON_DEBOUNCE_DELAY_MS    50u  /* Debounce time in milliseconds */
+#define BUTTON_COOLDOWN_DELAY_MS    200u /* Anti-repeat delay */
+#define SYSTEM_POLLING_DELAY_MS     10u  /* Main loop delay */
 
-/* Define the button pin and port */
-#define BUTTON_PIN   0 /* Assuming the button is connected to PC0 */
-#define BUTTON_PORT  GPIOC
+/* Private variables ---------------------------------------------------------*/
+static relay_driver_t water_pump;      /* Relay instance for water pump */
+static button_driver_t control_button; /* Button instance */
+
+/* Private function prototypes -----------------------------------------------*/
+static void System_Init(void);
 
 /**
- * @brief Main function. Initializes GPIO pins and controls an LED based on button input.
- *
- * @return int Should return 0 if execution is successful.
- */
-int main(void) {
-    /* Configure the LED pin as an output */
-    gpio_driver_config_t led_config;
-    led_config.port  = LED_PORT;
-    led_config.pin   = LED_PIN;
-    led_config.mode  = GPIO_DRIVER_MODE_OUTPUT;
-    led_config.otype = GPIO_DRIVER_OUTPUT_PUSH_PULL;
-    led_config.speed = GPIO_DRIVER_SPEED_LOW;
-    led_config.pull  = GPIO_DRIVER_NO_PULL; /* No internal pull-up/down needed for output */
-    gpio_driver_init(&led_config);
+  * @brief  Main program
+  * @retval int
+  */
+int main(void)
+{
+    /* System initialization */
+    System_Init();
 
-    /* Configure the button pin as an input with pull-down resistor */
-    gpio_driver_config_t button_config;
-    button_config.port  = BUTTON_PORT;
-    button_config.pin   = BUTTON_PIN;
-    button_config.mode  = GPIO_DRIVER_MODE_INPUT;
-    button_config.pull  = GPIO_DRIVER_PULL_DOWN; /* Use pull-down to ensure a defined LOW state when the button is not pressed */
-    gpio_driver_init(&button_config);
+    button_driver_state_t prev_button_state = BUTTON_DRIVER_STATE_RELEASED;
 
-    /* Main loop */
-    while (1) {
-        /* Read the state of the button */
-        uint8_t button_state = gpio_driver_read(BUTTON_PORT, BUTTON_PIN);
+    /* Main super-loop */
+    while (1)
+    {
+        button_driver_state_t current_state = BUTTON_read(&control_button);
 
-        /* If the button is pressed (HIGH state), turn the LED on */
-        if (button_state) {
-            gpio_driver_write(LED_PORT, LED_PIN, 1); /* Set LED pin HIGH */
-        } else {
-            /* If the button is not pressed (LOW state), turn the LED off */
-            gpio_driver_write(LED_PORT, LED_PIN, 0); /* Set LED pin LOW */
+        /* Detect complete press-release cycle */
+        if ((prev_button_state == BUTTON_DRIVER_STATE_RELEASED) &&
+            (current_state == BUTTON_DRIVER_STATE_PRESSED))
+        {
+            /* Toggle pump state */
+            RELAY_toggle(&water_pump);
+
+            /* Wait for button release */
+            while (BUTTON_read(&control_button) != BUTTON_DRIVER_STATE_RELEASED)
+            {
+                /* Blocking wait with timeout protection */
+                HAL_Delay(1);
+            }
+
+            /* Anti-repeat cooldown */
+            HAL_Delay(BUTTON_COOLDOWN_DELAY_MS);
         }
 
-        /* Simple delay loop for visualization (not recommended for real-time applications) */
-        for (volatile uint32_t i = 0; i < 100000; i++);
+        prev_button_state = current_state;
+        HAL_Delay(SYSTEM_POLLING_DELAY_MS);
     }
+}
+
+/**
+  * @brief  System initialization
+  * @note   Configures all hardware peripherals
+  */
+static void System_Init(void)
+{
+    /* Relay initialization (PA5 - Output) */
+    RELAY_init(&water_pump, GPIOA, 5u);
+
+    /* Button initialization (PC13 - Input with debounce) */
+    BUTTON_init(&control_button, GPIOC, 13u, BUTTON_DEBOUNCE_DELAY_MS);
 }

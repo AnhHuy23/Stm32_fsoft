@@ -1,25 +1,15 @@
-#include "GPIO_Driver.h"
+#include "gpio.h"
 
 /**
  * @brief Initialize GPIO pin with specified configuration.
  *
  * @param cfg Pointer to GPIO configuration structure
  */
-void gpio_driver_init(const gpio_driver_config_t *cfg)
+void GPIO_init(const gpio_config_t *cfg)
 {
     /* Enable clock for the corresponding GPIO port */
-    if (cfg->port == GPIOA)
-        RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-    else if (cfg->port == GPIOB)
-        RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
-    else if (cfg->port == GPIOC)
-        RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
-    else if (cfg->port == GPIOD)
-        RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
-    else if (cfg->port == GPIOE)
-        RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
-    else if (cfg->port == GPIOH)
-        RCC->AHB1ENR |= RCC_AHB1ENR_GPIOHEN;
+	uint32_t gpio_en_bit = ((uint32_t)cfg->port - GPIOA_BASE) / 0x400;
+	RCC->AHB1ENR |= (1 << (gpio_en_bit + RCC_AHB1ENR_GPIOAEN_Pos));
 
     /* Configure pin mode */
     cfg->port->MODER &= ~(0x3 << (cfg->pin * 2));
@@ -40,7 +30,7 @@ void gpio_driver_init(const gpio_driver_config_t *cfg)
     /* Configure alternate function if needed */
     if (cfg->mode == GPIO_DRIVER_MODE_ALT_FUNCTION)
     {
-        gpio_driver_set_af(cfg->port, cfg->pin, cfg->af);
+    	GPIO_setAlternateFunction(cfg->port, cfg->pin, cfg->af);
     }
 }
 
@@ -51,18 +41,10 @@ void gpio_driver_init(const gpio_driver_config_t *cfg)
  * @param pin  GPIO pin number (0~15).
  * @param af   Alternate function selection (AF0~AF15).
  */
-void gpio_driver_set_af(GPIO_TypeDef *port, uint8_t pin, gpio_driver_alt_function_t af)
+void GPIO_setAlternateFunction(GPIO_TypeDef *port, uint8_t pin, gpio_alt_function_t af)
 {
-    if (pin < 8)
-    {
-        port->AFR[0] &= ~(0xF << (pin * 4));
-        port->AFR[0] |= (af << (pin * 4));
-    }
-    else
-    {
-        port->AFR[1] &= ~(0xF << ((pin - 8) * 4));
-        port->AFR[1] |= (af << ((pin - 8) * 4));
-    }
+	volatile uint32_t *afr = &port->AFR[pin >> 3]; /* AFR[0] or AFR[1] */
+	*afr = (*afr & ~(0xF << ((pin & 0x7) * 4))) | (af << ((pin & 0x7) * 4));
 }
 
 /**
@@ -72,12 +54,9 @@ void gpio_driver_set_af(GPIO_TypeDef *port, uint8_t pin, gpio_driver_alt_functio
  * @param pin  GPIO pin number.
  * @param value 0 for low, non-zero for high.
  */
-void gpio_driver_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value)
+void GPIO_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value)
 {
-    if (value)
-        port->BSRR = (1 << pin);          // Set pin
-    else
-        port->BSRR = (1 << (pin + 16));   // Reset pin
+	port->BSRR = (1 << (pin + (value ? 0 : 16)));
 }
 
 /**
@@ -87,7 +66,7 @@ void gpio_driver_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value)
  * @param pin  GPIO pin number.
  * @return uint8_t 1 if high, 0 if low.
  */
-uint8_t gpio_driver_read(GPIO_TypeDef *port, uint8_t pin)
+uint8_t GPIO_read(GPIO_TypeDef *port, uint8_t pin)
 {
     return (port->IDR >> pin) & 0x01;
 }
@@ -98,7 +77,7 @@ uint8_t gpio_driver_read(GPIO_TypeDef *port, uint8_t pin)
  * @param port GPIO port.
  * @param pin  GPIO pin number.
  */
-void gpio_driver_toggle(GPIO_TypeDef *port, uint8_t pin)
+void GPIO_toggle(GPIO_TypeDef *port, uint8_t pin)
 {
     port->ODR ^= (1 << pin);
 }
