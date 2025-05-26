@@ -168,7 +168,7 @@ void ADC_DMA_Enable(ADC_TypeDef *adc);
 void ADC_DMA_Disable(ADC_TypeDef *adc);
 
 /**
- * @brief Checks if a specific DMA stream generic flag is set for the DMA associated with the specified ADC.
+ * @brief Gets the status of a specific DMA flag for the specified ADC.
  */
 uint8_t ADC_DMA_getFlagStatus(ADC_TypeDef *adc,
         ADC_DMA_genericFlag generic_flag);

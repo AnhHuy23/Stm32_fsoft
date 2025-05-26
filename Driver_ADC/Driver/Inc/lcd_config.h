@@ -5,7 +5,7 @@
 
 #define LCD_DATA_PORT GPIOA
 
-/* 4 pin mode -> pins */
+/* Define the data pins for the LCD */
 #define DATA5_Pin 5
 #define DATA6_Pin 6
 #define DATA7_Pin 7

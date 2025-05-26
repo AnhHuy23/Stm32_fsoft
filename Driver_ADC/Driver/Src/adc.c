@@ -8,10 +8,10 @@
 #define ADC_SQR3_SQ1_CLEAR_Mask     (0x1FUL) /* Mask to clear SQ1 bits (5 bits) */
 
 typedef struct {
-    DMA_TypeDef *DMAx; /* DMA peripheral */
+    DMA_TypeDef        *DMAx; /* DMA peripheral */
     DMA_Stream_TypeDef *DMA_Stream; /* DMA stream */
-    uint32_t DMA_Channel; /* DMA channel */
-    uint8_t DMA_StreamNumber; /* Stream number */
+    uint32_t           DMA_Channel; /* DMA channel */
+    uint8_t            DMA_streamNumber; /* Stream number */
     uint32_t RCC_AHB1ENR_DMAxEN; /* RCC AHB1ENR bit for DMA */
 } ADC_DMA_configInfo;
 
@@ -32,7 +32,7 @@ static bool ADC_DMA_getInfo(ADC_TypeDef *adc, ADC_DMA_configInfo *info) {
         info->DMAx = DMA2;
         info->DMA_Stream = DMA2_Stream0;
         info->DMA_Channel = (0UL << DMA_SxCR_CHSEL_Pos);
-        info->DMA_StreamNumber = 0;
+        info->DMA_streamNumber = 0;
         info->RCC_AHB1ENR_DMAxEN = RCC_AHB1ENR_DMA2EN;
         return true;
     }
@@ -41,7 +41,7 @@ static bool ADC_DMA_getInfo(ADC_TypeDef *adc, ADC_DMA_configInfo *info) {
         info->DMAx = DMA2;
         info->DMA_Stream = DMA2_Stream2;
         info->DMA_Channel = (1UL << DMA_SxCR_CHSEL_Pos);
-        info->DMA_StreamNumber = 2;
+        info->DMA_streamNumber = 2;
         info->RCC_AHB1ENR_DMAxEN = RCC_AHB1ENR_DMA2EN;
         return true;
     }
@@ -52,7 +52,7 @@ static bool ADC_DMA_getInfo(ADC_TypeDef *adc, ADC_DMA_configInfo *info) {
         info->DMAx = DMA2;
         info->DMA_Stream = DMA2_Stream1;
         info->DMA_Channel = (2UL << DMA_SxCR_CHSEL_Pos);
-        info->DMA_StreamNumber = 1;
+        info->DMA_streamNumber = 1;
         info->RCC_AHB1ENR_DMAxEN = RCC_AHB1ENR_DMA2EN;
         return true;
     }
@@ -507,13 +507,13 @@ void ADC_DMA_Config(ADC_TypeDef *adc, uint16_t *pData, uint16_t length,
     }
 
     /* Clear all interrupt flags for the stream */
-    if (dma_info.DMA_StreamNumber <= 3) {
+    if (dma_info.DMA_streamNumber <= 3) {
         /* Streams 0-3 use LIFCR (Low Interrupt Flag Clear Register) */
-        dma_peripheral->LIFCR |= (0x3FUL << (dma_info.DMA_StreamNumber * 6));
+        dma_peripheral->LIFCR |= (0x3FUL << (dma_info.DMA_streamNumber * 6));
     } else {
         /* Streams 4-7 use HIFCR (High Interrupt Flag Clear Register) */
         dma_peripheral->HIFCR |= (0x3FUL
-                << ((dma_info.DMA_StreamNumber - 4) * 6));
+                << ((dma_info.DMA_streamNumber - 4) * 6));
     }
 
     /* Set peripheral port register address */
@@ -616,7 +616,7 @@ uint8_t ADC_DMA_getFlagStatus(ADC_TypeDef *adc,
     }
     /* Get the specific flag bitmask based on the generic flag and stream number */
     uint32_t dma_flag_bitmask = ADC_DMA_getSpecificFlag(generic_flag,
-            dma_info.DMA_StreamNumber);
+            dma_info.DMA_streamNumber);
     /* Check if the flag bitmask is valid */
     if (dma_flag_bitmask == 0) {
         return 0; // Invalid flag
@@ -627,7 +627,7 @@ uint8_t ADC_DMA_getFlagStatus(ADC_TypeDef *adc,
     /* Determine which status register (LISR or HISR) to read based on the stream number.
      Streams 0-3 use LISR (Low Interrupt Status Register).
      Streams 4-7 use HISR (High Interrupt Status Register). */
-    if (dma_info.DMA_StreamNumber <= 3) {
+    if (dma_info.DMA_streamNumber <= 3) {
         /* Low Interrupt Status Register */
         status_register_value = dma_peripheral->LISR;
     } else {
@@ -653,7 +653,7 @@ void ADC_DMA_clearFlag(ADC_TypeDef *adc, ADC_DMA_genericFlag generic_flag) {
     }
     /* Get the specific flag bitmask based on the generic flag and stream number */
     uint32_t dma_clear_flag_bitmask = ADC_DMA_getSpecificFlag(generic_flag,
-            dma_info.DMA_StreamNumber);
+            dma_info.DMA_streamNumber);
     /* Check if the flag bitmask is valid */
     if (dma_clear_flag_bitmask == 0) {
         return;
@@ -663,7 +663,7 @@ void ADC_DMA_clearFlag(ADC_TypeDef *adc, ADC_DMA_genericFlag generic_flag) {
     /* Determine which flag clear register (LIFCR or HIFCR) to write to.
      Streams 0-3 use LIFCR (Low Interrupt Flag Clear Register).
      Streams 4-7 use HIFCR (High Interrupt Flag Clear Register). */
-    if (dma_info.DMA_StreamNumber <= 3) {
+    if (dma_info.DMA_streamNumber <= 3) {
         /* Low Interrupt Flag Clear Register */
         dma_peripheral->LIFCR |= dma_clear_flag_bitmask;
     } else {

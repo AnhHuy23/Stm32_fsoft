@@ -47,14 +47,50 @@ typedef enum {
     LCD_BLINK_OFF = 0x00
 } LCD_Display_Settings;
 
+/**
+ * @brief Initializes the LCD in 4-bit mode.
+ */
 void LCD_Init(void);
+
+/**
+ * @brief Sends a command to the LCD.
+ * @param cmd Command to send.
+ */
 void LCD_Clear(void);
+
+/**
+ * @brief Sends a command to the LCD.
+ */
 void LCD_Put(char c);
+
+/**
+ * @brief Writes a string to the LCD.
+ */
 void LCD_Write(char *str);
+
+/**
+ * @brief Sets the cursor position on the LCD.
+ */
 void LCD_setCursor(char x, char y);
+
+/**
+ * @brief Turns the LCD cursor display on.
+ */
 void LCD_cursorOn(void);
+
+/**
+ * @brief Turns on blink for the LCD cursor.
+ */
 void LCD_blinkOn(void);
+
+/**
+ * @brief Clears the LCD display.
+ */
 void LCD_clearDisplay(void);
+
+/**
+ * @brief Sets the display settings for the LCD.
+ */
 void LCD_setDisplaySettings(LCD_Display_Settings settings);
 
 #endif /* _LCD_PARALLEL_H_ */

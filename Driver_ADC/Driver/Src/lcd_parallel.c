@@ -27,7 +27,8 @@ static void delay_us(uint32_t us) {
     /* Calculate the total ticks needed for the delay */
     uint32_t total_ticks = us * ticks_per_us;
     if (total_ticks == 0) {
-        __NOP(); __NOP();
+        __NOP();
+        __NOP();
         return;
     }
     /* Ensure total_ticks does not exceed the maximum value for SysTick */
@@ -47,7 +48,8 @@ static void delay_us(uint32_t us) {
     /* Enable SysTick with processor clock */
     SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
     /* Wait until the count flag is set */
-    while (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk));
+    while (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk))
+        ;
     /* Disable SysTick after the delay */
     SysTick->CTRL = 0;
 }
@@ -176,7 +178,7 @@ void LCD_Init(void) {
 
 #if 1
     display_settings =
-            LCD_CMD_4BIT_MODE | LCD_CMD_2LINE_MODE | LCD_CMD_5x8_DOTS;
+    LCD_CMD_4BIT_MODE | LCD_CMD_2LINE_MODE | LCD_CMD_5x8_DOTS;
     LCD_sendData4Bit(0x03);
     delay_ms(5);
     LCD_sendData4Bit(0x03);
