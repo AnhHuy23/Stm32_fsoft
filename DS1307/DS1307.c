@@ -69,7 +69,7 @@ void DS1307_WriteTime(RTC_Time *time) {
     data[2] = dec_to_bcd(time->minutes);
     data[3] = dec_to_bcd(time->hours);
     
-    // Send data
+    /* Send data */
     while (I2Cx->SR2 & I2C_SR2_BUSY); /* Wait until bus free */
     I2Cx->CR1 |= I2C_CR1_START;   /* Generate START */
     while (!(I2Cx->SR1 & I2C_SR1_SB)); /* Wait for START generated */
