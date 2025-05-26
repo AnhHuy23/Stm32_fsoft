@@ -1,68 +1,67 @@
-#include "stm32f4xx.h"
-#include "gpio.h"
-#include "relay_driver.h"
-#include "button_driver.h"
+#include "main.h"
 
-/* Private constants ---------------------------------------------------------*/
-#define BUTTON_DEBOUNCE_DELAY_MS    50u  /* Debounce time in milliseconds */
-#define BUTTON_COOLDOWN_DELAY_MS    200u /* Anti-repeat delay */
-#define SYSTEM_POLLING_DELAY_MS     10u  /* Main loop delay */
+#define RELAY_PORT GPIOA
+#define RELAY_PIN  GPIO_PIN_5
 
-/* Private variables ---------------------------------------------------------*/
-static relay_driver_t water_pump;      /* Relay instance for water pump */
-static button_driver_t control_button; /* Button instance */
+#define BUTTON_PORT GPIOC
+#define BUTTON_PIN  GPIO_PIN_13
 
-/* Private function prototypes -----------------------------------------------*/
-static void System_Init(void);
+void SystemClock_Config(void);
+void Error_Handler(void);
 
-/**
-  * @brief  Main program
-  * @retval int
-  */
 int main(void)
 {
-    /* System initialization */
-    System_Init();
+    /* MCU Initialization */
+    HAL_Init();
+    SystemClock_Config();
 
-    button_driver_state_t prev_button_state = BUTTON_DRIVER_STATE_RELEASED;
+    /* GPIO Initialization structures */
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    /* Main super-loop */
+    /* Configure GPIO pin for Relay output */
+    GPIO_InitStruct.Pin = RELAY_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;      /* Push-pull output */
+    GPIO_InitStruct.Pull = GPIO_NOPULL;              /* No pull-up or pull-down */
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;     /* Low frequency */
+    HAL_GPIO_Init(RELAY_PORT, &GPIO_InitStruct);
+
+    /* Start with relay OFF */
+    HAL_GPIO_WritePin(RELAY_PORT, RELAY_PIN, GPIO_PIN_RESET);
+
+    /* Configure GPIO pin for Button input */
+    GPIO_InitStruct.Pin = BUTTON_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;          /* Input mode */
+    GPIO_InitStruct.Pull = GPIO_PULLUP;               /* Pull-up enabled */
+    HAL_GPIO_Init(BUTTON_PORT, &GPIO_InitStruct);
+
+    /* Variables to track button and relay state */
+    uint8_t relay_state = 0;           /* 0 = OFF, 1 = ON */
+    uint8_t button_prev_state = GPIO_PIN_SET;  /* Assume button not pressed (pull-up) */
+
     while (1)
     {
-        button_driver_state_t current_state = BUTTON_read(&control_button);
+        uint8_t button_curr_state = HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN);
 
-        /* Detect complete press-release cycle */
-        if ((prev_button_state == BUTTON_DRIVER_STATE_RELEASED) &&
-            (current_state == BUTTON_DRIVER_STATE_PRESSED))
+        /* Detect falling edge: button press (from released to pressed) */
+        if ((button_prev_state == GPIO_PIN_SET) && (button_curr_state == GPIO_PIN_RESET))
         {
-            /* Toggle pump state */
-            RELAY_toggle(&water_pump);
+            /* Toggle relay state */
+            relay_state = !relay_state;
 
-            /* Wait for button release */
-            while (BUTTON_read(&control_button) != BUTTON_DRIVER_STATE_RELEASED)
+            if (relay_state)
             {
-                /* Blocking wait with timeout protection */
-                HAL_Delay(1);
+                HAL_GPIO_WritePin(RELAY_PORT, RELAY_PIN, GPIO_PIN_SET);   /* Relay ON */
+            }
+            else
+            {
+                HAL_GPIO_WritePin(RELAY_PORT, RELAY_PIN, GPIO_PIN_RESET); /* Relay OFF */
             }
 
-            /* Anti-repeat cooldown */
-            HAL_Delay(BUTTON_COOLDOWN_DELAY_MS);
+            HAL_Delay(20);  /* Basic debounce delay */
         }
 
-        prev_button_state = current_state;
-        HAL_Delay(SYSTEM_POLLING_DELAY_MS);
+        button_prev_state = button_curr_state;
+
+        HAL_Delay(10);  /* Polling delay */
     }
-}
-
-/**
-  * @brief  System initialization
-  * @note   Configures all hardware peripherals
-  */
-static void System_Init(void)
-{
-    /* Relay initialization (PA5 - Output) */
-    RELAY_init(&water_pump, GPIOA, 5u);
-
-    /* Button initialization (PC13 - Input with debounce) */
-    BUTTON_init(&control_button, GPIOC, 13u, BUTTON_DEBOUNCE_DELAY_MS);
 }

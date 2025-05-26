@@ -1,5 +1,5 @@
-#ifndef GPIO_DRIVER_H
-#define GPIO_DRIVER_H
+#ifndef GPIO_H
+#define GPIO_H
 
 #include "stm32f4xx.h"
 
@@ -67,7 +67,7 @@ typedef struct {
  * @brief Initialize a GPIO pin with the given configuration
  * @param cfg Pointer to GPIO configuration struct
  */
-void GPIO_init(const gpio_config_t *cfg);
+void GPIO_Init(const gpio_config_t *cfg);
 
 /**
  * @brief Write logic value to GPIO pin
@@ -75,7 +75,7 @@ void GPIO_init(const gpio_config_t *cfg);
  * @param pin Pin number
  * @param value 0 = Low, non-zero = High
  */
-void GPIO_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value);
+void GPIO_Write(GPIO_TypeDef *port, uint8_t pin, uint8_t value);
 
 /**
  * @brief Read logic level of GPIO pin
@@ -83,14 +83,14 @@ void GPIO_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value);
  * @param pin Pin number
  * @return 0 = Low, 1 = High
  */
-uint8_t GPIO_read(GPIO_TypeDef *port, uint8_t pin);
+uint8_t GPIO_Read(GPIO_TypeDef *port, uint8_t pin);
 
 /**
  * @brief Toggle output level of GPIO pin
  * @param port GPIO port
  * @param pin Pin number
  */
-void GPIO_toggle(GPIO_TypeDef *port, uint8_t pin);
+void GPIO_Toggle(GPIO_TypeDef *port, uint8_t pin);
 
 /**
  * @brief Set alternate function for a GPIO pin
@@ -98,6 +98,6 @@ void GPIO_toggle(GPIO_TypeDef *port, uint8_t pin);
  * @param pin Pin number
  * @param af Alternate function selection
  */
-void GPIO_setAlternateFunction(GPIO_TypeDef *port, uint8_t pin, gpio_alt_function_t af);
+void GPIO_SetAlternateFunction(GPIO_TypeDef *port, uint8_t pin, gpio_alt_function_t af);
 
-#endif  /* GPIO_DRIVER_H */
+#endif  /* GPIO_H */

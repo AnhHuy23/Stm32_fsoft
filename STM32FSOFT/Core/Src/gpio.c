@@ -5,7 +5,7 @@
  *
  * @param cfg Pointer to GPIO configuration structure
  */
-void GPIO_init(const gpio_config_t *cfg)
+void GPIO_Init(const gpio_config_t *cfg)
 {
     /* Enable clock for the corresponding GPIO port */
 	uint32_t gpio_en_bit = ((uint32_t)cfg->port - GPIOA_BASE) / 0x400;
@@ -30,7 +30,7 @@ void GPIO_init(const gpio_config_t *cfg)
     /* Configure alternate function if needed */
     if (cfg->mode == GPIO_DRIVER_MODE_ALT_FUNCTION)
     {
-    	GPIO_setAlternateFunction(cfg->port, cfg->pin, cfg->af);
+    	GPIO_SetAlternateFunction(cfg->port, cfg->pin, cfg->af);
     }
 }
 
@@ -41,7 +41,7 @@ void GPIO_init(const gpio_config_t *cfg)
  * @param pin  GPIO pin number (0~15).
  * @param af   Alternate function selection (AF0~AF15).
  */
-void GPIO_setAlternateFunction(GPIO_TypeDef *port, uint8_t pin, gpio_alt_function_t af)
+void GPIO_SetAlternateFunction(GPIO_TypeDef *port, uint8_t pin, gpio_alt_function_t af)
 {
 	volatile uint32_t *afr = &port->AFR[pin >> 3]; /* AFR[0] or AFR[1] */
 	*afr = (*afr & ~(0xF << ((pin & 0x7) * 4))) | (af << ((pin & 0x7) * 4));
@@ -54,7 +54,7 @@ void GPIO_setAlternateFunction(GPIO_TypeDef *port, uint8_t pin, gpio_alt_functio
  * @param pin  GPIO pin number.
  * @param value 0 for low, non-zero for high.
  */
-void GPIO_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value)
+void GPIO_Write(GPIO_TypeDef *port, uint8_t pin, uint8_t value)
 {
 	port->BSRR = (1 << (pin + (value ? 0 : 16)));
 }
@@ -66,7 +66,7 @@ void GPIO_write(GPIO_TypeDef *port, uint8_t pin, uint8_t value)
  * @param pin  GPIO pin number.
  * @return uint8_t 1 if high, 0 if low.
  */
-uint8_t GPIO_read(GPIO_TypeDef *port, uint8_t pin)
+uint8_t GPIO_Read(GPIO_TypeDef *port, uint8_t pin)
 {
     return (port->IDR >> pin) & 0x01;
 }
@@ -77,7 +77,7 @@ uint8_t GPIO_read(GPIO_TypeDef *port, uint8_t pin)
  * @param port GPIO port.
  * @param pin  GPIO pin number.
  */
-void GPIO_toggle(GPIO_TypeDef *port, uint8_t pin)
+void GPIO_Toggle(GPIO_TypeDef *port, uint8_t pin)
 {
     port->ODR ^= (1 << pin);
 }
