@@ -24,4 +24,6 @@ VCC tất cả	3.3V (có thể dùng 5V nếu LCD hỗ trợ)
 PB6: I2C1_SCL
 
 PB7: I2C1_SDA
-![Uploading image.png…]()
+
+![image](https://github.com/user-attachments/assets/d3bef7f7-b95f-4083-9b15-80aa2f386091)
+
