@@ -1,89 +1,99 @@
-#include "DS1307.h"
+#include "ds1307.h"
+#include "i2c_ds1307.h"
 
-static I2C_TypeDef *I2Cx;  /* Pointer to I2C peripheral */
-
-/**
- * @brief Convert BCD to decimal
- * @param bcd BCD value to convert
- * @return Decimal value
- */
-static uint8_t bcd_to_dec(uint8_t bcd) {
-    return ((bcd >> 4) * 10) + (bcd & 0x0F);
-}
+#define DS1307_ADDRESS       0x68      /* 7-bit I2C address of DS1307 */
+#define DS1307_WRITE_ADDRESS (DS1307_ADDRESS << 1)       /* Write address (LSB=0) */
 
 /**
- * @brief Convert decimal to BCD
- * @param dec Decimal value to convert
- * @return BCD value
- */
-static uint8_t dec_to_bcd(uint8_t dec) {
-    return ((dec / 10) << 4) | (dec % 10);
+  * @brief  Convert Binary-Coded Decimal to Decimal
+  * @param  val: BCD value to convert
+  * @retval Decimal value
+  * @note   Converts a byte containing BCD to normal decimal number
+  */
+static uint8_t BCD2DEC(uint8_t val) {
+    return (val >> 4) * 10 + (val & 0x0F);
 }
 
-void DS1307_Init(I2C_TypeDef *i2c) {
-    I2Cx = i2c;
+/**
+  * @brief  Convert Decimal to Binary-Coded Decimal
+  * @param  val: Decimal value to convert
+  * @retval BCD encoded value
+  * @note   Converts a normal decimal number to BCD format
+  */
+static uint8_t DEC2BCD(uint8_t val) {
+    return ((val / 10) << 4) | (val % 10);
 }
 
-void DS1307_ReadTime(RTC_Time *time) {
-    uint8_t data[3];
-    uint8_t reg_addr = 0x00; /* Start reading from seconds register */
-    
-    /* Send register address */
-    while (I2Cx->SR2 & I2C_SR2_BUSY); /* Wait until bus free */
-    I2Cx->CR1 |= I2C_CR1_START;      /* Generate START */
-    while (!(I2Cx->SR1 & I2C_SR1_SB)); /* Wait for START generated */
-    (void)I2Cx->SR1;                 /* Clear SB flag */
-    I2Cx->DR = (DS1307_I2C_ADDR << 1) | 0; /* Address + Write */
-    while (!(I2Cx->SR1 & I2C_SR1_ADDR));   /* Wait for address sent */
-    (void)I2Cx->SR1; (void)I2Cx->SR2;      /* Clear flags */
-    I2Cx->DR = reg_addr;              /* Send register address */
-    while (!(I2Cx->SR1 & I2C_SR1_TXE));    /* Wait for byte transmitted */
-    
-    /* Read time data (3 bytes: sec, min, hour) */
-    I2Cx->CR1 |= I2C_CR1_START;       /* Repeated START */
-    while (!(I2Cx->SR1 & I2C_SR1_SB)); /* Wait for START generated */
-    (void)I2Cx->SR1;
-    I2Cx->DR = (DS1307_I2C_ADDR << 1) | 1; /* Address + Read */
-    while (!(I2Cx->SR1 & I2C_SR1_ADDR));
-    (void)I2Cx->SR1; (void)I2Cx->SR2;
-    
-    /* Read with NACK on last byte */
-    for (uint8_t i = 0; i < 3; i++) {
-        if (i == 2) I2Cx->CR1 &= ~I2C_CR1_ACK; /* No ACK for last byte */
-        while (!(I2Cx->SR1 & I2C_SR1_RXNE));   /* Wait for data received */
-        data[i] = I2Cx->DR;
-    }
-    
-    I2Cx->CR1 |= I2C_CR1_STOP;        /* Generate STOP */
-    
-    /* Convert and store time values */
-    time->seconds = bcd_to_dec(data[0] & 0x7F); /* Mask CH bit */
-    time->minutes = bcd_to_dec(data[1]);
-    time->hours = bcd_to_dec(data[2] & 0x3F);   /* Mask 24/12 hour bit */
+/**
+  * @brief  Initialize DS1307 RTC module
+  * @note   Initializes I2C peripheral used for communication with DS1307
+  * @retval None
+  */
+void DS1307_Init(void) {
+    I2C_DS1307_Init();
 }
 
-void DS1307_WriteTime(RTC_Time *time) {
-    uint8_t data[4];
-    data[0] = 0x00; /* Register address (seconds) */
-    data[1] = dec_to_bcd(time->seconds) & 0x7F; /* Ensure CH bit is 0 */
-    data[2] = dec_to_bcd(time->minutes);
-    data[3] = dec_to_bcd(time->hours);
-    
-    /* Send data */
-    while (I2Cx->SR2 & I2C_SR2_BUSY); /* Wait until bus free */
-    I2Cx->CR1 |= I2C_CR1_START;   /* Generate START */
-    while (!(I2Cx->SR1 & I2C_SR1_SB)); /* Wait for START generated */
-    (void)I2Cx->SR1;
-    I2Cx->DR = (DS1307_I2C_ADDR << 1) | 0; /* Address + Write */
-    while (!(I2Cx->SR1 & I2C_SR1_ADDR));   /* Wait for address sent */
-    (void)I2Cx->SR1; (void)I2Cx->SR2;      /* Clear flags */
-    
-    /* Send 4 bytes */
-    for (uint8_t i = 0; i < 4; i++) {
-        while (!(I2Cx->SR1 & I2C_SR1_TXE)); /* Wait for DR empty */
-        I2Cx->DR = data[i];
-    }
-    
-    while (!(I2Cx->SR1 & I2C_SR1_BTF));    /* Wait for transfer complete */
-    I2Cx->CR1 |= I2C_CR1_STOP;             /* Generate STOP */
+/**
+  * @brief  Set time and date on DS1307 RTC
+  * @param  time: Pointer to RTC_Time structure containing time to set
+  * @note   Time values should be in valid ranges:
+  *         - Seconds: 0-59
+  *         - Minutes: 0-59
+  *         - Hours: 0-23 (24h format)
+  *         - Day of week: 1-7 (1=Sunday)
+  *         - Day: 1-31
+  *         - Month: 1-12
+  *         - Year: 00-99 (2000-2099)
+  * @retval None
+  */
+void DS1307_SetTime(RTC_Time *time) {
+    /* Start I2C communication and select register 0 (seconds register) */
+    I2C_DS1307_Start();
+    I2C_DS1307_Address(DS1307_WRITE_ADDRESS);
+    I2C_DS1307_Write(0x00);
+
+    /* Write all time/date registers in sequence */
+    I2C_DS1307_Write(DEC2BCD(time->seconds));
+    I2C_DS1307_Write(DEC2BCD(time->minutes));
+    I2C_DS1307_Write(DEC2BCD(time->hours));
+    I2C_DS1307_Write(DEC2BCD(time->day_of_week));
+    I2C_DS1307_Write(DEC2BCD(time->day));
+    I2C_DS1307_Write(DEC2BCD(time->month));
+    I2C_DS1307_Write(DEC2BCD(time->year));
+
+    // End communication
+    I2C_DS1307_Stop();
+}
+
+/**
+  * @brief  Get current time and date from DS1307 RTC
+  * @param  time: Pointer to RTC_Time structure to store retrieved time
+  * @note   The structure will be populated with current RTC values:
+  *         - Time is in 24-hour format
+  *         - Day of week ranges from 1-7 (1=Sunday)
+  *         - Year represents 2000-2099 (00-99)
+  * @retval None
+  */
+void DS1307_GetTime(RTC_Time *time) {
+    /* Start I2C communication and select register 0 (seconds register) */
+    I2C_DS1307_Start();
+    I2C_DS1307_Address(DS1307_WRITE_ADDRESS);
+    I2C_DS1307_Write(0x00);
+
+    /* Restart in read mode */
+    I2C_DS1307_Start();
+    I2C_DS1307_Address(DS1307_READ_ADDRESS);
+
+    /* Read all time/date registers in sequence */
+    /* Send ACK for all bytes except last one */
+    time->seconds = BCD2DEC(I2C_DS1307_Read(1));
+    time->minutes = BCD2DEC(I2C_DS1307_Read(1));
+    time->hours   = BCD2DEC(I2C_DS1307_Read(1));
+    time->day_of_week = BCD2DEC(I2C_DS1307_Read(1));
+    time->day     = BCD2DEC(I2C_DS1307_Read(1));
+    time->month   = BCD2DEC(I2C_DS1307_Read(1));
+    time->year    = BCD2DEC(I2C_DS1307_Read(0)); /* NACK after last byte */
+
+    /* End communication */
+    I2C_DS1307_Stop();
 }
