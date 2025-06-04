@@ -12,7 +12,7 @@ typedef struct {
     DMA_Stream_TypeDef *DMA_Stream; /* DMA stream */
     uint32_t           DMA_Channel; /* DMA channel */
     uint8_t            DMA_streamNumber; /* Stream number */
-    uint32_t RCC_AHB1ENR_DMAxEN; /* RCC AHB1ENR bit for DMA */
+    uint32_t           RCC_AHB1ENR_DMAxEN; /* RCC AHB1ENR bit for DMA */
 } ADC_DMA_configInfo;
 
 /**
