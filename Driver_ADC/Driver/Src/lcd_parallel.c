@@ -1,73 +1,9 @@
 #include "lcd_parallel.h"
 #include <stdint.h>
 #include "stm32f4xx.h"
+#include "delay.h"
 
 char display_settings;
-
-/**
- * @brief Simple delay function (busy-wait loop).
- * This function provides a busy-wait delay for a specified number of microseconds.
- * @param us: Number of microseconds to delay
- * This function uses the SysTick timer to create a delay.
- */
-static void delay_us(uint32_t us) {
-    /* Ensure us is not zero to avoid division by zero */
-    if (us == 0) {
-        return;
-    }
-    /* Calculate the number of ticks per microsecond based on the system clock */
-    uint32_t ticks_per_us = SystemCoreClock / 1000000;
-    /* If ticks_per_us is zero, use a busy-wait loop */
-    if (ticks_per_us == 0) {
-        for (volatile uint32_t i = 0; i < us * 10; ++i) {
-            __NOP();
-        }
-        return;
-    }
-    /* Calculate the total ticks needed for the delay */
-    uint32_t total_ticks = us * ticks_per_us;
-    if (total_ticks == 0) {
-        __NOP();
-        __NOP();
-        return;
-    }
-    /* Ensure total_ticks does not exceed the maximum value for SysTick */
-    if (total_ticks > 0xFFFFFF) {
-        total_ticks = 0xFFFFFF;
-    }
-    /* Configure SysTick for the delay */
-
-    /* Disable SysTick */
-    SysTick->CTRL = 0;
-    /* Clear SysTick control register */
-    SysTick->CTRL = 0;
-    /* Load the SysTick counter value */
-    SysTick->LOAD = total_ticks - 1;
-    /* Clear the current value */
-    SysTick->VAL = 0;
-    /* Enable SysTick with processor clock */
-    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
-    /* Wait until the count flag is set */
-    while (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk))
-        ;
-    /* Disable SysTick after the delay */
-    SysTick->CTRL = 0;
-}
-
-/**
- * @brief Simple delay function for milliseconds
- * This function provides a busy-wait delay for a specified number of milliseconds.
- * @param ms: Number of milliseconds to delay
- * This function uses the delay_us function to create a delay.
- */
-static void delay_ms(uint32_t ms) {
-    if (ms == 0) {
-        return;
-    }
-    for (uint32_t i = 0; i < ms; ++i) {
-        delay_us(1000);
-    }
-}
 
 /**
  * @brief  Send a falling edge to the LCD
@@ -75,32 +11,32 @@ static void delay_ms(uint32_t ms) {
  */
 static void fallingEdge(void) {
     /* Set Enable pin low */
-    LCD_DATA_PORT->ODR &= ~(1 << E_Pin);
+    LCD_DATA_PORT_B->ODR &= ~(1 << E_Pin);
     /* Set Enable pin high */
-    LCD_DATA_PORT->ODR |= (1 << E_Pin);
+    LCD_DATA_PORT_B->ODR |= (1 << E_Pin);
     delay_us(2);
     /* Set Enable pin low */
-    LCD_DATA_PORT->ODR &= ~(1 << E_Pin);
+    LCD_DATA_PORT_B->ODR &= ~(1 << E_Pin);
     delay_us(1);
 }
 
 #ifndef LCD8Bit
 static void LCD_sendData4Bit(char data) {
-    LCD_DATA_PORT->ODR &= ~((1 << DATA5_Pin) | (1 << DATA6_Pin)
-            | (1 << DATA7_Pin) | (1 << DATA8_Pin));
+    LCD_DATA_PORT_B->ODR &= ~((1 << DATA5_Pin) | (1 << DATA6_Pin));
+    LCD_DATA_PORT_A->ODR &= ~((1 << DATA7_Pin) | (1 << DATA8_Pin));
 
     /* Set data pin 5 */
     if (data & 0x01)
-        LCD_DATA_PORT->ODR |= (1 << DATA5_Pin);
+        LCD_DATA_PORT_B->ODR |= (1 << DATA5_Pin);
     /* Set data pin 6 */
     if (data & 0x02)
-        LCD_DATA_PORT->ODR |= (1 << DATA6_Pin);
+        LCD_DATA_PORT_B->ODR |= (1 << DATA6_Pin);
     /* Set data pin 7 */
     if (data & 0x04)
-        LCD_DATA_PORT->ODR |= (1 << DATA7_Pin);
+        LCD_DATA_PORT_A->ODR |= (1 << DATA7_Pin);
     /* Set data pin 8 */
     if (data & 0x08)
-        LCD_DATA_PORT->ODR |= (1 << DATA8_Pin);
+        LCD_DATA_PORT_A->ODR |= (1 << DATA8_Pin);
 
     fallingEdge();
     delay_us(45);
@@ -115,7 +51,7 @@ static void LCD_sendData4Bit(char data) {
  */
 static void LCD_sendCommand(char command) {
     /* Clear RS pin for command */
-    LCD_DATA_PORT->ODR &= ~(1 << RS_Pin);
+    LCD_DATA_PORT_B->ODR &= ~(1 << RS_Pin);
     /* Send upper nibble*/
     LCD_sendData4Bit(command >> 4);
     /* Send lower nibble */
@@ -129,7 +65,7 @@ static void LCD_sendCommand(char command) {
  * Sends a character to be displayed on the LCD.
  */
 static void LCD_sendData(char data) {
-    LCD_DATA_PORT->ODR |= (1 << RS_Pin); // Set RS pin for data
+    LCD_DATA_PORT_B->ODR |= (1 << RS_Pin); // Set RS pin for data
     LCD_sendData4Bit(data >> 4); // Send upper nibble
     LCD_sendData4Bit(data); // Send lower nibble
 }
@@ -171,9 +107,9 @@ void LCD_Write(char *str) {
  */
 void LCD_Init(void) {
     /* Clear RS pin for command */
-    LCD_DATA_PORT->ODR &= ~(1 << RS_Pin);
+    LCD_DATA_PORT_B->ODR &= ~(1 << RS_Pin);
     /* Clear Enable pin */
-    LCD_DATA_PORT->ODR &= ~(1 << E_Pin);
+    LCD_DATA_PORT_B->ODR &= ~(1 << E_Pin);
     delay_ms(50);
 
 #if 1
