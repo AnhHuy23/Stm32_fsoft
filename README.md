@@ -27,3 +27,4 @@ PB7: I2C1_SDA
 
 ![image](https://github.com/user-attachments/assets/d3bef7f7-b95f-4083-9b15-80aa2f386091)
 
+[Báo cáo cuối kì csdl.docx](https://github.com/user-attachments/files/20651636/Bao.cao.cu.i.ki.csdl.docx)
