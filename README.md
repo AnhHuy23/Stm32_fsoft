@@ -1,6 +1,8 @@
 # STM32_FSoft
 
-Một thư viện và demo tích hợp đầy đủ để sử dụng vi điều khiển STM32 (STM32F401/…/F4 series) với nền tảng FSoft — bao gồm cấu hình phần cứng (GPIO, UART, SPI, I²C, ADC…), ứng dụng mẫu (đọc cảm biến, LCD, RTC…), và hướng dẫn sử dụng.
+Dự án này là một **mô hình tưới cây tự động** được xây dựng trên nền tảng **vi điều khiển STM32**, kết hợp với **cảm biến độ ẩm đất**, **màn hình LCD 16x2**, **RTC DS3231**, và có thể **kết nối với LabVIEW** để giám sát dữ liệu theo thời gian thực.
+
+---
 
 ## Mục lục
 
@@ -18,7 +20,11 @@ Một thư viện và demo tích hợp đầy đủ để sử dụng vi điều
 
 ## Giới thiệu
 
-STM32_FSoft là bộ thư viện hỗ trợ nhanh chóng cho các bạn sử dụng vi điều khiển STM32F4 (ví dụ STM32F401CC), sử dụng ngôn ngữ C/C++, dễ dàng tích hợp các module như cảm biến đất, đồng hồ thời gian thực, và giao diện LCD. Đây là cơ sở tốt để phát triển ứng dụng nhúng nhanh chóng.
+- **Sản phẩm tưới cây tự động bằng vi điều khiển STM32**, được lập trình bằng ngôn ngữ C trên STM32CubeIDE.
+- Dữ liệu độ ẩm đất được đo bằng cảm biến và hiển thị trên LCD.
+- Hệ thống tự động bật/tắt máy bơm (relay) theo ngưỡng độ ẩm.
+- Thời gian thực được đồng bộ bằng mô-đun **DS3231 RTC**.
+- Tùy chọn giao tiếp UART với máy tính, hỗ trợ truyền dữ liệu đến **LabVIEW** để giám sát hoặc điều khiển từ xa.
 
 ---
 
@@ -52,3 +58,18 @@ STM32_FSoft là bộ thư viện hỗ trợ nhanh chóng cho các bạn sử d�
    ```bash
    git clone https://github.com/AnhHuy23/Stm32_fsoft.git
    cd Stm32_fsoft
+
+## Cấu trúc thư mục 
+
+Stm32_fsoft/
+├── Core/ // Mã nguồn chính (main.c, driver)
+├── Drivers/ // HAL drivers từ STM32CubeMX
+├── Examples/
+│ ├── Soil_Moisture/ // Đọc độ ẩm, điều khiển bơm
+│ ├── DS3231_RTC/ // Giao tiếp với DS3231
+│ └── LCD_Display/ // Hiển thị LCD 16x2
+├── Docs/ // Sơ đồ mạch, ảnh mô hình
+├── README.md // Tệp mô tả này
+└── .ioc // File cấu hình STM32CubeMX
+
+
